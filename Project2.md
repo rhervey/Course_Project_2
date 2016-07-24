@@ -31,6 +31,8 @@ Answer:  Total emissions HAVE decreased in the US from 1999 to 2008.
 
 ### Question 2
 
+**Have total emissions from PM2.5 decreased in the Baltimore City, Maryland (fips == "24510") from 1999 to 2008?**
+
 Aggregate Emission Totals for Baltimore from 1999 to 2008.
 
 
@@ -54,56 +56,51 @@ barplot(
 
 ![plot of chunk plot2](plot2.png) 
 
-**Have total emissions from PM2.5 decreased in the Baltimore City, Maryland (fips == "24510") from 1999 to 2008?**
-
-Overall total emissions from PM2.5 have decreased in Baltimore City, Maryland from 1999 to 2008.
+Answer:  Total emissions from PM2.5 HAVE decreased in Baltimore from 1999 to 2008.
 
 ### Question 3
 
-Using the ggplot2 plotting system,
+**Of the four types of sources indicated by the type (point, nonpoint, onroad, nonroad) variable, which of these four sources have seen decreases in emissions from 1999–2008 for Baltimore City?**
 
+**Which have seen increases in emissions from 1999–2008?**
+
+ggplot2 this sucker:
 
 ```r
 library(ggplot2)
 
-ggp <- ggplot(baltimoreNEI,aes(factor(year),Emissions,fill=type)) +
-  geom_bar(stat="identity") +
-  theme_bw() + guides(fill=FALSE)+
-  facet_grid(.~type,scales = "free",space="free") + 
-  labs(x="year", y=expression("Total PM"[2.5]*" Emission (Tons)")) + 
-  labs(title=expression("PM"[2.5]*" Emissions, Baltimore City 1999-2008 by Source Type"))
+plot3 <- ggplot(baltimoreEmissions,aes(factor(year),Emissions,fill=type)) +
+        geom_bar(stat="identity") +
+        theme_bw() + guides(fill=FALSE)+
+        facet_grid(.~type,scales = "free",space="free") + 
+        labs(x="year", y=expression("Emissions")) + 
+        labs(title=expression("Emissions, Baltimore City 1999-2008 by Type"))
 
-print(ggp)
+print(plot3)
 ```
 
-![plot of chunk plot3](figure/plot3.png) 
+![plot of chunk plot3](plot3.png) 
 
-**Of the four types of sources indicated by the type (point, nonpoint, onroad, nonroad) variable, which of these four sources have seen decreases in emissions from 1999–2008 for Baltimore City?**
+Answer:  The `non-road`, `nonpoint`, `on-road` types all saw decreased emissions from 1999-2008 in Baltimore.
 
-The `non-road`, `nonpoint`, `on-road` source types have all seen decreased emissions overall from 1999-2008 in Baltimore City.
-
-**Which have seen increases in emissions from 1999–2008?**
-
-The `point` source saw a slight increase overall from 1999-2008. Also note that the `point` source saw a significant increase until 2005 at which point it decreases again by 2008 to just above the starting values. 
-
-(Note that I did not catch this originally as I started off with a log scale on Emissions)
+The `point` type increased from 1999-2008, however increased until 2005 and then decreased again in 2008.
 
 ### Question 4
 
-First we subset coal combustion source factors NEI data.
+**Across the United States, how have emissions from coal combustion-related sources changed from 1999–2008?**
+
+Subset coal combustion factors:
 
 
 ```r
-# Subset coal combustion related NEI data
-combustionRelated <- grepl("comb", SCC$SCC.Level.One, ignore.case=TRUE)
-coalRelated <- grepl("coal", SCC$SCC.Level.Four, ignore.case=TRUE) 
-coalCombustion <- (combustionRelated & coalRelated)
-combustionSCC <- SCC[coalCombustion,]$SCC
-combustionNEI <- NEI[NEI$SCC %in% combustionSCC,]
+combustRecords <- grepl("comb", SCC$SCC.Level.One, ignore.case=TRUE)
+coalRecords <- grepl("coal", SCC$SCC.Level.Four, ignore.case=TRUE) 
+coal_combust_records <- (combustRecords & coalRecords)
+c_SCC <- SCC[coal_combust_records,]$SCC
+c_NEI <- NEI[NEI$SCC %in% c_SCC,]
 ```
 
-Note:  The SCC levels go from generic to specific. We assume that coal combustion related SCC records are those where SCC.Level.One contains the substring 'comb' and SCC.Level.Four contains the substring 'coal'.
-
+ggplot2 Coal and Combustion:
 
 ```r
 library(ggplot2)
@@ -117,83 +114,79 @@ ggp <- ggplot(combustionNEI,aes(factor(year),Emissions/10^5)) +
 print(ggp)
 ```
 
-![plot of chunk plot4](figure/plot4.png) 
+![plot of chunk plot4](plot4.png) 
 
-**Across the United States, how have emissions from coal combustion-related sources changed from 1999–2008?**
-
-Emissions from coal combustion related sources have decreased from 6 * 10^6 to below 4 * 10^6 from 1999-2008.
-
-Eg. Emissions from coal combustion related sources have decreased by about 1/3 from 1999-2008!
+Answer:  Coal combustion related emissions have decreased from 1999-2008.
 
 ### Question 5
 
-First we subset the motor vehicles, which we assume is anything like Motor Vehicle in SCC.Level.Two.
-
-
-```r
-vehicles <- grepl("vehicle", SCC$SCC.Level.Two, ignore.case=TRUE)
-vehiclesSCC <- SCC[vehicles,]$SCC
-vehiclesNEI <- NEI[NEI$SCC %in% vehiclesSCC,]
-```
-
-Next we subset for motor vehicles in Baltimore,
-
-
-```r
-baltimoreVehiclesNEI <- vehiclesNEI[vehiclesNEI$fips==24510,]
-```
-
-Finally we plot using ggplot2,
-
-
-```r
-library(ggplot2)
-ggp <- ggplot(baltimoreVehiclesNEI,aes(factor(year),Emissions)) +
-  geom_bar(stat="identity",fill="grey",width=0.75) +
-  theme_bw() +  guides(fill=FALSE) +
-  labs(x="year", y=expression("Total PM"[2.5]*" Emission (10^5 Tons)")) + 
-  labs(title=expression("PM"[2.5]*" Motor Vehicle Source Emissions in Baltimore from 1999-2008"))
-
-print(ggp)
-```
-
-![plot of chunk plot5](figure/plot5.png) 
-
 **How have emissions from motor vehicle sources changed from 1999–2008 in Baltimore City?**
 
-Emissions from motor vehicle sources have dropped from 1999-2008 in Baltimore City!
+Subset the vehicle related emissions:
+
+
+```r
+veh <- grepl("vehicle", SCC$SCC.Level.Two, ignore.case=TRUE)
+veh_SCC <- SCC[veh,]$SCC
+veh_NEI <- NEI[NEI$SCC %in% veh_SCC,]
+```
+
+Baltimore Vehicle Subset:
+
+
+```r
+baltVehicleNEI <- veh_NEI[veh_NEI$fips=="24510",]
+```
+
+ggplot2 Baltimore Vehicle Emissions:
+
+
+```r
+plot5 <- ggplot(baltVehicleNEI,aes(factor(year),Emissions)) +
+        geom_bar(stat="identity",fill="orange",width=0.75) +
+        theme_bw() +  guides(fill=FALSE) +
+        labs(x="Year", y=expression("Emissions")) + 
+        labs(title=expression("Baltimore Vehicle Emissions: 1999-2008"))
+
+print(plot5)
+```
+
+![plot of chunk plot5](plot5.png) 
+
+Answer:  Baltimore Vehicle Emissions have decreased from 1999-2008.
 
 ### Question 6
 
-Comparing emissions from motor vehicle sources in Baltimore City (fips == "24510") with emissions from motor vehicle sources in Los Angeles County, California (fips == "06037"),
-
-
-```r
-vehiclesBaltimoreNEI <- vehiclesNEI[vehiclesNEI$fips == 24510,]
-vehiclesBaltimoreNEI$city <- "Baltimore City"
-vehiclesLANEI <- vehiclesNEI[vehiclesNEI$fips=="06037",]
-vehiclesLANEI$city <- "Los Angeles County"
-bothNEI <- rbind(vehiclesBaltimoreNEI,vehiclesLANEI)
-```
-
-Now we plot using the ggplot2 system,
-
-
-```r
-library(ggplot2)
- 
-ggp <- ggplot(bothNEI, aes(x=factor(year), y=Emissions, fill=city)) +
- geom_bar(aes(fill=year),stat="identity") +
- facet_grid(scales="free", space="free", .~city) +
- guides(fill=FALSE) + theme_bw() +
- labs(x="year", y=expression("Total PM"[2.5]*" Emission (Kilo-Tons)")) + 
- labs(title=expression("PM"[2.5]*" Motor Vehicle Source Emissions in Baltimore & LA, 1999-2008"))
- 
-print(ggp)
-```
-
-![plot of chunk plot6](figure/plot6.png) 
 
 **Which city has seen greater changes over time in motor vehicle emissions?**
 
-Los Angeles County has seen the greatest changes over time in motor vehicle emissions.
+Subseting Baltimore and LA vehicle emission records and binding them:
+
+
+```r
+baltVehicleNEI <- veh_NEI[veh_NEI$fips=="24510",]
+baltVehicleNEI$city <- "Baltimore City"
+
+LAVehiclesNEI <- veh_NEI[veh_NEI$fips=="06037",]
+LAVehiclesNEI$city <- "Los Angeles County"
+
+LA_Baltimore <- rbind(baltVehicleNEI,LAVehiclesNEI)
+```
+
+ggplot2 Baltimore vs LA:
+
+
+```r
+plot6 <- ggplot(LA_Baltimore, aes(x=factor(year), y=Emissions, fill=city)) +
+        geom_bar(aes(fill=year),stat="identity") +
+        facet_grid(scales="free", space="free", .~city) +
+        guides(fill=FALSE) + theme_bw() +
+        labs(x="Year", y=expression("Emissions")) + 
+        labs(title=expression("Vehicle Emissions in LA & Baltimore: 1999-2008"))
+
+print(plot6)
+```
+
+![plot of chunk plot6](plot6.png) 
+
+Answer:  Although LA still has much higher emissions than Baltimore, it has seen greater nominal change in emissions over time.
